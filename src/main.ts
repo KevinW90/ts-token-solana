@@ -2,7 +2,9 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { userKeypair } from "./helpers";
 import {
   TokenStandard,
+  createFungible,
   createV1,
+  mintV1,
   mplTokenMetadata,
 } from "@metaplex-foundation/mpl-token-metadata";
 import {
@@ -25,20 +27,25 @@ umi.use(keypairIdentity(keypair)).use(mplTokenMetadata());
 // Step 1: Create the metadata account
 // GitHub will store the metadata
 const metadataURL =
-  "https://github.com/KevinW90/ts-token-solana/main/src/metadata.json";
-let metadata: any;
+  "https://raw.githubusercontent.com/KevinW90/ts-token-solana/main/src/metadata.json";
 async function getMetadata() {
-  fetch(metadataURL)
-    .then((response) => response.json())
-    .then((data) => {
-      metadata = data;
-    });
+  const metadataResponse = await fetch(metadataURL);
+  const metadata = await metadataResponse.json();
+
+  // console.log("metadataResponse", metadataResponse);
+  // console.log("metadata", metadata);
+  return metadata;
 }
-getMetadata();
 
 const mint = generateSigner(umi);
-async function createMetadataDetails() {
-  await createV1(umi, {
+
+(async () => {
+  const metadata = await getMetadata();
+  console.log("metadata", metadata);
+
+  // Step 2: Create the mint
+
+  const create = await createFungible(umi, {
     mint,
     authority: umi.identity,
     name: metadata.name,
@@ -46,6 +53,7 @@ async function createMetadataDetails() {
     uri: metadata.uri,
     sellerFeeBasisPoints: percentAmount(0),
     decimals: 9,
-    tokenStandard: TokenStandard.Fungible,
   }).sendAndConfirm(umi);
-}
+
+  console.log("create", create);
+})();
